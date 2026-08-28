@@ -1,7 +1,19 @@
 #!/bin/sh
-# 提交后自动推送到 GitHub，触发 Actions 发布（方案 B：仅 toc 版本变化时实际上传 CF）
+# 提交后：自动 push → 触发 Actions 发布；同步到 WoW 游戏目录
 branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || exit 0
-if [ "$branch" = "master" ] || [ "$branch" = "main" ]; then
-  echo "[BGLite_Plus] 正在推送到 origin/$branch ..."
-  git push origin "$branch" 2>&1 || echo "[BGLite_Plus] push 失败，请检查网络/凭据后手动 git push"
+if [ "$branch" != "master" ] && [ "$branch" != "main" ]; then
+  exit 0
+fi
+
+root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+
+echo "[BGLite_Plus] 正在推送到 origin/$branch ..."
+git push origin "$branch" 2>&1 || echo "[BGLite_Plus] push 失败，请检查网络/凭据后手动 git push"
+
+game='c:/Program Files (x86)/World of Warcraft/_classic_titan_/Interface/AddOns/BGLite_Plus'
+if [ -d "$game" ] || [ -d "$(dirname "$game")" ]; then
+  if command -v cmd.exe >/dev/null 2>&1; then
+    cmd.exe //c "robocopy \"$root\" \"$game\" /MIR /XD .git .github .vscode dist scripts .githooks /XF .gitcommit .gitignore /NFL /NDL /NJH /NJS /nc /ns /np" >/dev/null 2>&1 || true
+    echo "[BGLite_Plus] 已同步到游戏目录"
+  fi
 fi

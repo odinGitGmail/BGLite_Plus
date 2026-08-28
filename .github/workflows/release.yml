@@ -4,6 +4,13 @@ on:
   push:
     branches:
       - master
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 强制发布（忽略 toc 版本是否变化）
+        required: false
+        default: "false"
+        type: boolean
 
 permissions:
   contents: write
@@ -20,6 +27,8 @@ jobs:
       - name: Detect toc version change (方案 B)
         id: version
         shell: bash
+        env:
+          FORCE: ${{ github.event_name == 'workflow_dispatch' && inputs.force }}
         run: |
           set -euo pipefail
           TOC="BGLite_Plus.toc"
@@ -31,9 +40,12 @@ jobs:
           fi
           echo "current=$current" >> "$GITHUB_OUTPUT"
           echo "previous=$previous" >> "$GITHUB_OUTPUT"
-          if [ -n "$previous" ] && [ "$current" = "$previous" ]; then
+          if [ "$FORCE" = "true" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "手动强制发布 v${current}"
+          elif [ -n "$previous" ] && [ "$current" = "$previous" ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "BGLite_Plus.toc 版本未变化 ($current)，跳过 CurseForge 发布。"
+            echo "BGLite_Plus.toc 版本未变化 ($current)，跳过发布。"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
             echo "版本变化: ${previous:-<none>} -> $current，开始发布。"
@@ -82,14 +94,20 @@ jobs:
       - name: Upload to CurseForge
         if: steps.version.outputs.changed == 'true'
         env:
+          CF_API_KEY: ${{ secrets.CF_API_KEY }}
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
           CF_PROJECT_ID: ${{ secrets.CF_PROJECT_ID }}
           CF_GAME_VERSION_IDS: ${{ secrets.CF_GAME_VERSION_IDS }}
         shell: bash
         run: |
           set -euo pipefail
-          if [ -z "${CF_API_TOKEN:-}" ] || [ -z "${CF_PROJECT_ID:-}" ]; then
-            echo "::warning::未配置 CF_API_TOKEN 或 CF_PROJECT_ID，跳过 CurseForge 上传。"
+          TOKEN="${CF_API_TOKEN:-${CF_API_KEY:-}}"
+          PROJECT_ID="${CF_PROJECT_ID:-}"
+          if [ -z "$PROJECT_ID" ]; then
+            PROJECT_ID=$(grep -m1 '^## X-Curse-Project-ID:' BGLite_Plus.toc 2>/dev/null | sed 's/^## X-Curse-Project-ID:[[:space:]]*//' || true)
+          fi
+          if [ -z "$TOKEN" ] || [ -z "$PROJECT_ID" ]; then
+            echo "::warning::未配置 CF_API_KEY/CF_API_TOKEN 或项目 ID（Secret 或 toc 的 X-Curse-Project-ID），跳过 CurseForge 上传。"
             exit 0
           fi
           VERSION="${{ steps.version.outputs.current }}"
@@ -105,23 +123,23 @@ jobs:
             IDS=$(echo "$CF_GAME_VERSION_IDS" | tr ',' ' ')
             GV_JSON=$(printf '%s\n' $IDS | jq -R 'tonumber' | jq -s '.')
           else
-            VID=$(curl -sf -H "X-Api-Token: $CF_API_TOKEN" \
+            VID=$(curl -sf -H "X-Api-Token: $TOKEN" \
               "https://wow.curseforge.com/api/game/versions" \
               | jq -r --arg v "$GAMEVER" '[.[] | select(.name==$v)] | .[0].id // empty')
             if [ -z "$VID" ]; then
-              echo "::error::无法解析 CurseForge gameVersion id（${GAMEVER}）。请在 GitHub Secrets 设置 CF_GAME_VERSION_IDS（逗号分隔的数字 id）。"
-              exit 1
+              echo "::warning::无法自动匹配 CurseForge 游戏版本（${GAMEVER}）。请在 Secrets 设置 CF_GAME_VERSION_IDS。"
+              exit 0
             fi
             GV_JSON="[$VID]"
           fi
 
           CL=$(jq -nc --arg cl "${{ steps.changelog.outputs.changelog }}" '{changelog:$cl, changelogType:"text", displayName:("BGLite Plus '"$VERSION"'"), releaseType:"release", gameVersions:'"$GV_JSON"'}')
-          echo "Uploading ${ZIP} to project ${CF_PROJECT_ID} ..."
+          echo "Uploading ${ZIP} to project ${PROJECT_ID} ..."
           HTTP=$(curl -sS -o response.txt -w "%{http_code}" \
-            -H "X-Api-Token: $CF_API_TOKEN" \
+            -H "X-Api-Token: $TOKEN" \
             -F "metadata=$CL" \
             -F "file=@${ZIP}" \
-            "https://wow.curseforge.com/api/projects/${CF_PROJECT_ID}/upload-file")
+            "https://wow.curseforge.com/api/projects/${PROJECT_ID}/upload-file")
           if [ "$HTTP" != "200" ] && [ "$HTTP" != "201" ]; then
             echo "::error::CurseForge 上传失败 HTTP ${HTTP}"
             cat response.txt
