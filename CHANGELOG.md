@@ -1,0 +1,59 @@
+# 更新日志
+
+本文档记录 **BGLite Plus** 的重要变更。  
+版本号与 `BGLite_Plus.toc` 中的 `## Version` 一致。
+
+格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
+
+---
+
+## [0.1.3] - 2026-08-29
+
+### 新增
+- 配置 CurseForge 项目（`X-Curse-Project-ID: 1672098`）
+- 首次通过 GitHub Actions + BigWigs packager 自动上传 CurseForge
+
+---
+
+## [0.1.2] - 2026-08-28
+
+### 新增
+- `release.cmd` 一键发版脚本（绕过 PowerShell 执行策略限制）
+- post-commit 钩子：commit 后自动 push 并同步到游戏 AddOns 目录
+
+### 变更
+- CI 工作流支持 `CF_API_KEY`、手动强制发布、toc 项目 ID 校验
+
+---
+
+## [0.1.1] - 2026-08-28
+
+### 新增
+- GitHub Actions 自动发布流水线（方案 B：仅 toc `## Version` 变化时发布）
+- 版本号变更时自动生成 GitHub Release 附件
+- `.pkgmeta` 打包配置（BigWigs packager）
+
+---
+
+## [0.1.0] - 2026-08-28
+
+### 新增
+- **心愿清单 Tab** 集成到 BGLite 主界面（Boss 行 + 装备格子）
+- 标题栏 **导出 / 导入心愿**（仅心愿 Tab 显示）
+- **角色总览**（多角色团本 / 装备概览）
+- 斜杠命令：`/bgp`、`/bgph`（`hope`、`ro`、`hope debug`、`hope rebuild`）
+- 运行时扩展 BGLite（`HopeOverrides`、`HopeTab`、`WishlistHope` 等）
+- 角色总览缩放/透明度、心愿语音提醒等设置项
+- 小地图悬停显示心愿摘要
+
+### 修复
+- 心愿 UI 被主窗背景遮挡（帧层级）
+- 编辑心愿格时装备列表重复叠加、无法关闭
+- `HopeOverrides` Lua 报错（WoW Lua 不支持给函数挂字段）
+
+---
+
+[0.1.3]: https://github.com/odinGitGmail/BGLite_Plus/compare/v0.1.2...v0.1.3
+[0.1.2]: https://github.com/odinGitGmail/BGLite_Plus/compare/v0.1.1...v0.1.2
+[0.1.1]: https://github.com/odinGitGmail/BGLite_Plus/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/odinGitGmail/BGLite_Plus/releases/tag/v0.1.0
