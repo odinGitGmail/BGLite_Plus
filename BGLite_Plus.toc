@@ -1,0 +1,28 @@
+## Interface: 38002
+## Title: BGLite Plus
+## Title-zhCN: |cff00BFFFBGLite 增强|r
+## Notes: 为 BGLite 增加心愿清单与角色总览。命令：/bgp /bgph
+## Author: 丷杠上开花丷
+## Version: 0.1.0
+## Dependencies: BGLite
+## SavedVariables: BGLite_Plus
+
+Locales\zhCN.lua
+Core\Init.lua
+Core\Utils.lua
+Core\HopeOverrides.lua
+Core\Module\WishlistStubs.lua
+Core\Module\WishlistHope.lua
+Core\Module\HopeFrame.lua
+Core\Module\WishlistAlerts.lua
+Core\Module\bagSync.lua
+Libs\EnchantData\Enchant.lua
+Core\Module\EquipViewer.lua
+Core\Module\RoleOverview.lua
+Core\Module\RoleOverview_core.lua
+Core\Module\RoleOverviewSort.lua
+Core\Integrations\HopeTab.lua
+Core\Integrations\RoleOverviewOptions.lua
+Core\Integrations\MinimapHover.lua
+Core\Bootstrap.lua
+Core\Aliases.lua
