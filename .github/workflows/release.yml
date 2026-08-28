@@ -1,5 +1,8 @@
 name: Release to CurseForge
 
+# 发布标志：BGLite_Plus.toc 的 ## Version
+# master push 且该版本相对上一提交变化时 → 打 tag v{版本} → BigWigsMods/packager 上传 CurseForge
+
 on:
   push:
     branches:
@@ -24,7 +27,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Detect toc version change (方案 B)
+      - name: Detect toc version change
         id: version
         shell: bash
         env:
@@ -32,9 +35,9 @@ jobs:
         run: |
           set -euo pipefail
           TOC="BGLite_Plus.toc"
-          current=$(grep -m1 '^## Version:' "$TOC" | sed 's/^## Version:[[:space:]]*//')
+          current=$(grep -m1 '^## Version:' "$TOC" | sed 's/^## Version:[[:space:]]*//' | tr -d '\r')
           if git rev-parse HEAD~1 >/dev/null 2>&1; then
-            previous=$(git show "HEAD~1:$TOC" 2>/dev/null | grep -m1 '^## Version:' | sed 's/^## Version:[[:space:]]*//' || true)
+            previous=$(git show "HEAD~1:$TOC" 2>/dev/null | grep -m1 '^## Version:' | sed 's/^## Version:[[:space:]]*//' | tr -d '\r' || true)
           else
             previous=""
           fi
@@ -42,124 +45,49 @@ jobs:
           echo "previous=$previous" >> "$GITHUB_OUTPUT"
           if [ "$FORCE" = "true" ]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "手动强制发布 v${current}"
+            echo "手动强制发布 toc 版本 ${current}"
           elif [ -n "$previous" ] && [ "$current" = "$previous" ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "BGLite_Plus.toc 版本未变化 ($current)，跳过发布。"
+            echo "toc ## Version 未变化 (${current})，跳过发布。"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "版本变化: ${previous:-<none>} -> $current，开始发布。"
+            echo "toc ## Version: ${previous:-<none>} -> ${current}，开始发布。"
           fi
 
-      - name: Package addon zip
-        if: steps.version.outputs.changed == 'true'
-        id: package
-        shell: bash
-        run: |
-          set -euo pipefail
-          VERSION="${{ steps.version.outputs.current }}"
-          OUT="dist/BGLite_Plus-${VERSION}.zip"
-          mkdir -p dist/stage/BGLite_Plus
-          rsync -a \
-            --exclude='.git' \
-            --exclude='.github' \
-            --exclude='.vscode' \
-            --exclude='.githooks' \
-            --exclude='.gitcommit' \
-            --exclude='dist' \
-            --exclude='scripts' \
-            ./ dist/stage/BGLite_Plus/
-          (cd dist/stage && zip -r "../BGLite_Plus-${VERSION}.zip" BGLite_Plus)
-          echo "zip=$OUT" >> "$GITHUB_OUTPUT"
-
-      - name: Build changelog
-        if: steps.version.outputs.changed == 'true'
-        id: changelog
-        shell: bash
-        run: |
-          set -euo pipefail
-          VERSION="${{ steps.version.outputs.current }}"
-          log=$(git log --pretty=format:'- %s (%h)' -15 || true)
-          if [ -z "${log:-}" ]; then
-            log="- Release ${VERSION}"
-          fi
-          {
-            echo "changelog<<EOF"
-            echo "BGLite Plus ${VERSION}"
-            echo ""
-            echo "${log}"
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Upload to CurseForge
+      - name: Check CurseForge secrets and toc project id
         if: steps.version.outputs.changed == 'true'
         env:
           CF_API_KEY: ${{ secrets.CF_API_KEY }}
-          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-          CF_PROJECT_ID: ${{ secrets.CF_PROJECT_ID }}
-          CF_GAME_VERSION_IDS: ${{ secrets.CF_GAME_VERSION_IDS }}
         shell: bash
         run: |
           set -euo pipefail
-          TOKEN="${CF_API_TOKEN:-${CF_API_KEY:-}}"
-          PROJECT_ID="${CF_PROJECT_ID:-}"
-          if [ -z "$PROJECT_ID" ]; then
-            PROJECT_ID=$(grep -m1 '^## X-Curse-Project-ID:' BGLite_Plus.toc 2>/dev/null | sed 's/^## X-Curse-Project-ID:[[:space:]]*//' || true)
-          fi
-          if [ -z "$TOKEN" ] || [ -z "$PROJECT_ID" ]; then
-            echo "::warning::未配置 CF_API_KEY/CF_API_TOKEN 或项目 ID（Secret 或 toc 的 X-Curse-Project-ID），跳过 CurseForge 上传。"
-            exit 0
-          fi
-          VERSION="${{ steps.version.outputs.current }}"
-          ZIP="${{ steps.package.outputs.zip }}"
-          IFACE=$(grep -m1 '^## Interface:' BGLite_Plus.toc | grep -oE '[0-9]+')
-          MAJOR=$((IFACE / 10000))
-          MINOR=$(((IFACE / 100) % 100))
-          PATCH=$((IFACE % 100))
-          GAMEVER="${MAJOR}.${MINOR}.${PATCH}"
-          echo "Interface ${IFACE} -> game version ${GAMEVER}"
-
-          if [ -n "${CF_GAME_VERSION_IDS:-}" ]; then
-            IDS=$(echo "$CF_GAME_VERSION_IDS" | tr ',' ' ')
-            GV_JSON=$(printf '%s\n' $IDS | jq -R 'tonumber' | jq -s '.')
-          else
-            VID=$(curl -sf -H "X-Api-Token: $TOKEN" \
-              "https://wow.curseforge.com/api/game/versions" \
-              | jq -r --arg v "$GAMEVER" '[.[] | select(.name==$v)] | .[0].id // empty')
-            if [ -z "$VID" ]; then
-              echo "::warning::无法自动匹配 CurseForge 游戏版本（${GAMEVER}）。请在 Secrets 设置 CF_GAME_VERSION_IDS。"
-              exit 0
-            fi
-            GV_JSON="[$VID]"
-          fi
-
-          CL=$(jq -nc --arg cl "${{ steps.changelog.outputs.changelog }}" '{changelog:$cl, changelogType:"text", displayName:("BGLite Plus '"$VERSION"'"), releaseType:"release", gameVersions:'"$GV_JSON"'}')
-          echo "Uploading ${ZIP} to project ${PROJECT_ID} ..."
-          HTTP=$(curl -sS -o response.txt -w "%{http_code}" \
-            -H "X-Api-Token: $TOKEN" \
-            -F "metadata=$CL" \
-            -F "file=@${ZIP}" \
-            "https://wow.curseforge.com/api/projects/${PROJECT_ID}/upload-file")
-          if [ "$HTTP" != "200" ] && [ "$HTTP" != "201" ]; then
-            echo "::error::CurseForge 上传失败 HTTP ${HTTP}"
-            cat response.txt
+          if [ -z "${CF_API_KEY:-}" ]; then
+            echo "::error::缺少 GitHub Secret CF_API_KEY（与 TitanCharOverview 使用同一个即可）"
             exit 1
           fi
-          echo "CurseForge 上传成功。"
+          if ! grep -qE '^## X-Curse-Project-ID:[[:space:]]*[1-9][0-9]*' BGLite_Plus.toc; then
+            echo "::error::请在 BGLite_Plus.toc 增加一行: ## X-Curse-Project-ID: <CurseForge项目数字ID>"
+            exit 1
+          fi
 
-      - name: Create GitHub Release
+      - name: Create git tag from toc version
         if: steps.version.outputs.changed == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
           VERSION="${{ steps.version.outputs.current }}"
           TAG="v${VERSION}"
-          ZIP="${{ steps.package.outputs.zip }}"
-          NOTES="${{ steps.changelog.outputs.changelog }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if git rev-parse "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" "$ZIP" --clobber
+            echo "已存在 tag ${TAG}"
           else
-            gh release create "$TAG" "$ZIP" --title "BGLite Plus ${VERSION}" --notes "$NOTES"
+            git tag -a "$TAG" -m "release: ${TAG} (toc ## Version)"
           fi
+          git push origin "refs/tags/${TAG}" || true
+
+      - name: Package and publish to CurseForge
+        if: steps.version.outputs.changed == 'true'
+        uses: BigWigsMods/packager@v2
+        env:
+          CF_API_KEY: ${{ secrets.CF_API_KEY }}

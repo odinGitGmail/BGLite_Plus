@@ -3,6 +3,8 @@ param(
     [string]$Version
 )
 
+# 发版：只改 toc ## Version 并 commit；post-commit 自动 push
+# GitHub Actions 检测到 toc 版本变化后打 tag 并用 BigWigs packager 上传 CurseForge
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 $toc = Join-Path $root "BGLite_Plus.toc"
@@ -25,5 +27,5 @@ git add BGLite_Plus.toc
 git commit -m "release: v$Version"
 
 Write-Host ""
-Write-Host "[BGLite_Plus] release v$Version committed."
-Write-Host "[BGLite_Plus] post-commit hook will push and sync to game folder."
+Write-Host "[BGLite_Plus] toc ## Version -> $Version committed."
+Write-Host "[BGLite_Plus] post-commit will push; Actions publishes when toc version changes."

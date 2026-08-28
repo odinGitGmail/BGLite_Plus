@@ -1,3 +1,6 @@
 dist/
 *.zip
 response.txt
+.cf.local
+scripts/cf-icon.png
+scripts/cf-logo.png

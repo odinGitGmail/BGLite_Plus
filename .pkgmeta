@@ -1,0 +1,12 @@
+package-as: BGLite_Plus
+
+ignore:
+  - .github
+  - .gitignore
+  - .pkgmeta
+  - .gitcommit
+  - .githooks
+  - .vscode
+  - scripts
+  - release.cmd
+  - dist
