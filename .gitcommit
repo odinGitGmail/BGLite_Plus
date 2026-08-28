@@ -1,6 +1,6 @@
 {
   "projectName": "BGLite_Plus",
-  "path": "package.json",
-  "versionRegex": "\"version\"\\s*:\\s*\"([\\d.]+)\"",
+  "path": "BGLite_Plus.toc",
+  "versionRegex": "## Version:\\s*(.+)",
   "description": "表格增强插件"
 }
