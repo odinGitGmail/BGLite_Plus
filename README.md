@@ -8,6 +8,7 @@ An enhancement addon for **[BGLite](https://github.com/)** that adds **Wishlist*
 | **Requires** | **BGLite** must be installed and enabled |
 | **Author** | 丷杠上开花丷 |
 | **License** | [MIT](LICENSE) |
+| **Version** | See `## Version` in `BGLite_Plus.toc` |
 
 [中文说明](README.zh-CN.md) · [CurseForge](https://authors.curseforge.com/#/projects/1672098/files) · [GitHub](https://github.com/odinGitGmail/BGLite_Plus)
 
@@ -19,14 +20,15 @@ An enhancement addon for **[BGLite](https://github.com/)** that adds **Wishlist*
 
 - Adds a **Wishlist** tab to the BGLite main window
 - Manage desired loot per boss row and item slot
-- **Export / Import** buttons on the title bar (visible on the Wishlist tab only)
-- Voice alerts when wishlist items are looted or auctioned (configurable)
-- Minimap tooltip shows your current wishes
+- Saved **per realm + character**
+- **Export / Import** on the title bar (Wishlist tab only)
+- Optional voice alerts for loot / auction matches
+- Minimap tooltip shows current wishes
 
 ### Character Overview
 
 - Multi-character raid progress, gear, and bag summary
-- Standalone UI opened via slash command or keybind
+- Standalone UI via slash command or keybind
 - Options for UI scale, background opacity, and more
 
 ---
@@ -38,6 +40,8 @@ An enhancement addon for **[BGLite](https://github.com/)** that adds **Wishlist*
    `World of Warcraft\_classic_titan_\Interface\AddOns\`
 3. Enable **BGLite Plus** in the AddOns list at login
 4. Reload UI (`/reload`)
+
+Or install the Release zip from [CurseForge](https://authors.curseforge.com/#/projects/1672098/files).
 
 > BGLite Plus alone is not sufficient — BGLite is required.
 
@@ -66,27 +70,44 @@ In the BGLite options panel:
 ## FAQ
 
 **Wishlist tab shows no boss rows or slots?**  
-Run `/bgp hope rebuild` or `/reload`; ensure both addons are up to date.
+Run `/bgp hope rebuild` or `/reload`; keep both addons updated.
 
-**Loot picker lists stacking on top of each other?**  
-Fixed in v0.1.x — update to the latest release.
+**Loot picker appears behind cells / cannot click?**  
+Update to **v0.1.3+** (picker raised to TOOLTIP strata).
+
+**Crash on Wishlist with `UpdateBiaoGeAllIsHaved`?**  
+Update to **v0.1.3+** (safe override in Plus; BGLite files untouched).
+
+**CurseForge file shows Alpha instead of Release?**  
+From **v0.1.4**, publishes are tag-triggered Releases. Download the latest Release build.
 
 **Does it change BGLite?**  
-No files in BGLite are modified; integration is runtime-only via `BG.*` hooks.
+No. Runtime hooks only via `BG.*`.
 
 ---
 
-## Development
+## Development / Release
+
+Requires **Python 3**, **git**, and GitHub secret `CF_API_KEY`.
 
 ```powershell
-# Release (auto: bump last toc version segment, e.g. 0.1.3 → 0.1.4)
+cd D:\dev\github\wow_interface\BGLite_Plus
+
+# Release: auto-bump last toc version segment (e.g. 0.1.6 -> 0.1.7)
 .\release.cmd
 
 # Or set an explicit version
 .\release.cmd 0.2.0
 ```
 
-A clean `v{version}` tag push uploads as CurseForge Release (not Alpha). Do not reuse a version.
+Flow: bump `## Version` → commit → annotated tag `v{version}` → push branch + tag → GitHub Actions (BigWigs packager) uploads a CurseForge **Release**.
+
+Notes:
+
+- Do not reuse a version / tag
+- Tag names must not contain `alpha` / `beta`
+- If git uses `http.proxy` (e.g. Clash on `127.0.0.1:7890`), keep the proxy running during release
+- See [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
@@ -94,3 +115,4 @@ A clean `v{version}` tag push uploads as CurseForge Release (not Alpha). Do not 
 
 - Source: https://github.com/odinGitGmail/BGLite_Plus
 - Changelog: [CHANGELOG.md](CHANGELOG.md)
+- CurseForge: https://authors.curseforge.com/#/projects/1672098/files

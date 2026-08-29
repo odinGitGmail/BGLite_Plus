@@ -7,10 +7,31 @@
 
 ---
 
+## [0.1.7] - 2026-08-30
+
+### 变更
+- `release.py` 发版推送保留本机 git `http.proxy`（不再清空代理导致 push 失败）
+
+---
+
+## [0.1.6] - 2026-08-30
+
+### 变更
+- `release.cmd` 优先调用 Python 发版脚本，避免 Windows PowerShell 编码/解析错误
+
+---
+
+## [0.1.5] - 2026-08-30
+
+### 变更
+- 发版提交自动包含流水线与文档相关文件，确保 tag 对应提交可触发正式版 Actions
+
+---
+
 ## [0.1.4] - 2026-08-30
 
 ### 变更
-- 发版流水线改为仅 `v*` tag 触发；每次上传 CurseForge **正式版（Release）**，不再因 master 推送变成 Alpha
+- 发版流水线改为仅推送 `v*` tag 时打包；CurseForge 上传为 **正式版（Release）**，不再因 master 推送变成 Alpha
 - `release.cmd` 支持无参数自动递增 toc 最小版本段；有参数则使用指定版本
 
 ### 修复
@@ -44,7 +65,7 @@
 ## [0.1.1] - 2026-08-28
 
 ### 新增
-- GitHub Actions 自动发布流水线（方案 B：仅 toc `## Version` 变化时发布）
+- GitHub Actions 自动发布流水线
 - 版本号变更时自动生成 GitHub Release 附件
 - `.pkgmeta` 打包配置（BigWigs packager）
 
@@ -68,6 +89,10 @@
 
 ---
 
+[0.1.7]: https://github.com/odinGitGmail/BGLite_Plus/compare/v0.1.6...v0.1.7
+[0.1.6]: https://github.com/odinGitGmail/BGLite_Plus/compare/v0.1.5...v0.1.6
+[0.1.5]: https://github.com/odinGitGmail/BGLite_Plus/compare/v0.1.4...v0.1.5
+[0.1.4]: https://github.com/odinGitGmail/BGLite_Plus/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/odinGitGmail/BGLite_Plus/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/odinGitGmail/BGLite_Plus/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/odinGitGmail/BGLite_Plus/compare/v0.1.0...v0.1.1
