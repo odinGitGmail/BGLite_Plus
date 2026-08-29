@@ -30,16 +30,8 @@ RELEASE_FILES = [
 
 
 def run(args: list[str], check: bool = True) -> subprocess.CompletedProcess[str]:
+    # Keep git http.proxy (e.g. 127.0.0.1:7890). Clearing it breaks push on this machine.
     env = os.environ.copy()
-    for key in list(env):
-        if "proxy" in key.lower():
-            del env[key]
-    env["HTTP_PROXY"] = ""
-    env["HTTPS_PROXY"] = ""
-    env["http_proxy"] = ""
-    env["https_proxy"] = ""
-    env["ALL_PROXY"] = ""
-    env["all_proxy"] = ""
     env["GIT_TERMINAL_PROMPT"] = "0"
     print(">", " ".join(args))
     proc = subprocess.run(
@@ -127,25 +119,12 @@ def main() -> None:
     run(["git", "commit", "-m", f"release: {tag}"])
     run(["git", "tag", "-a", tag, "-m", f"release: {tag} (toc ## Version)"])
 
-    push_branch = run(
-        ["git", "-c", "http.proxy=", "-c", "https.proxy=", "push", "origin", "HEAD"],
-        check=False,
-    )
+    # post-commit may already push the branch; still ensure branch + tag are on origin
+    push_branch = run(["git", "push", "origin", "HEAD"], check=False)
     if push_branch.returncode != 0:
         print("[BGLite_Plus] WARNING: git push branch failed; run: git push origin HEAD")
 
-    run(
-        [
-            "git",
-            "-c",
-            "http.proxy=",
-            "-c",
-            "https.proxy=",
-            "push",
-            "origin",
-            f"refs/tags/{tag}",
-        ]
-    )
+    run(["git", "push", "origin", f"refs/tags/{tag}"])
 
     print("")
     print(f"[BGLite_Plus] toc ## Version -> {version}")
