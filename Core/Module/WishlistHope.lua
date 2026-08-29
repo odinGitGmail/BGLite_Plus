@@ -27,14 +27,26 @@ local function OpenHopeLootPicker(bt)
     elseif BG.FrameZhuangbeiList then
         BG.FrameZhuangbeiList:Hide()
     end
-    local fn = BG.TCOSetListzhuangbei or BG.SetListzhuangbei
+    local fn = BG.BGP_SetListzhuangbei or BG.TCOSetListzhuangbei or BG.SetListzhuangbei
     if fn then
         local ok, err = pcall(fn, bt)
-        if ok then return end
+        if ok then
+            if BG.FrameZhuangbeiList and BG.FrameZhuangbeiList.Show then
+                BG.FrameZhuangbeiList:Show()
+            end
+            -- 打开列表后保焦，避免失焦立刻关掉（若别处仍挂了 Hide）
+            if bt.SetFocus and bt:IsVisible() then
+                bt:SetFocus()
+            end
+            return
+        end
         print("|cff00BFFF<BGLite Plus>|r 装备列表打开失败:", tostring(err))
     end
-    if BG.TCOShowHopeLootList then
-        BG.TCOShowHopeLootList(bt)
+    if BG.BGP_ShowHopeLootList or BG.TCOShowHopeLootList then
+        (BG.BGP_ShowHopeLootList or BG.TCOShowHopeLootList)(bt)
+        if bt.SetFocus and bt:IsVisible() then
+            bt:SetFocus()
+        end
     end
 end
 
@@ -485,13 +497,11 @@ function BG.HopeUI(FB)
                         end
                         BG.HopeFrameDs[FB .. 2]["nandu" .. n]["boss" .. b]["ds" .. i]:Show()
                     end)
-                    -- 失去光标时
+                    -- 失去光标时（与 BGLite 表格一致：不在此关闭装备列表，
+                    -- 否则抬层/点击列表会导致失焦后列表瞬间被关掉）
                     bt:SetScript("OnEditFocusLost", function(self)
                         self:ClearHighlightText()
                         BG.HopeFrameDs[FB .. 2]["nandu" .. n]["boss" .. b]["ds" .. i]:Hide()
-                        if BG.FrameZhuangbeiList then
-                            BG.FrameZhuangbeiList:Hide()
-                        end
                     end)
                     -- 按TAB跳转右边
                     bt:SetScript("OnTabPressed", function(self)
@@ -1590,18 +1600,6 @@ end
 
 function BG.OpenHopeLootPicker(owner)
     if not owner then return false end
-    if BG.BGP_HideZhuangbeiList then
-        BG.BGP_HideZhuangbeiList()
-    elseif BG.FrameZhuangbeiList then
-        BG.FrameZhuangbeiList:Hide()
-    end
-    local fn = BG.TCOSetListzhuangbei or BG.SetListzhuangbei
-    if fn then
-        local ok, err = pcall(fn, owner)
-        if not ok then
-            print("|cff00BFFF<BGLite Plus>|r 装备列表打开失败:", tostring(err))
-        end
-        return ok
-    end
-    return BG.TCOShowHopeLootList(owner)
+    OpenHopeLootPicker(owner)
+    return BG.FrameZhuangbeiList and BG.FrameZhuangbeiList:IsShown() or false
 end

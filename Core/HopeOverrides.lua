@@ -7,17 +7,23 @@ local function HideZhuangbeiList()
 end
 
 -- 心愿页 HopeMainFrame/格子 Level 远高于 BGLite 列表(120)，列表会被盖住无法点击。
+-- 用更高 FrameLevel，并尽量保持与 MainFrame 同 Strata，减少 EditBox 失焦。
 local function RaiseZhuangbeiListAboveHope()
     local f = BG.FrameZhuangbeiList
-    if not f or not f.SetFrameStrata then
+    if not f or not f.SetFrameLevel then
         return
     end
     if not (BG.HopeMainFrame and BG.HopeMainFrame:IsShown()) then
         return
     end
-    f:SetFrameStrata("TOOLTIP")
+    local main = BG.MainFrame
+    if main and main.GetFrameStrata and f.SetFrameStrata then
+        f:SetFrameStrata(main:GetFrameStrata())
+    end
+    local hopeLevel = BG.HopeMainFrame:GetFrameLevel() or 0
+    local need = math.max(hopeLevel + 50, (main and main.GetFrameLevel and main:GetFrameLevel() or 100) + 80)
     f:SetToplevel(true)
-    f:SetFrameLevel(500)
+    f:SetFrameLevel(need)
     local base = f:GetFrameLevel()
     for _, child in ipairs({ f:GetChildren() }) do
         if child and child.SetFrameLevel then
@@ -103,6 +109,12 @@ function BG.OpenHopeLootPicker(bt)
         local ok, err = pcall(fn, bt)
         if ok then
             RaiseZhuangbeiListAboveHope()
+            if BG.FrameZhuangbeiList and BG.FrameZhuangbeiList.Show then
+                BG.FrameZhuangbeiList:Show()
+            end
+            if bt.SetFocus and bt:IsVisible() then
+                bt:SetFocus()
+            end
             return
         end
         print("|cff00BFFF<BGLite Plus>|r 装备列表打开失败:", tostring(err))
@@ -110,6 +122,9 @@ function BG.OpenHopeLootPicker(bt)
     if BG.BGP_ShowHopeLootList or BG.TCOShowHopeLootList then
         (BG.BGP_ShowHopeLootList or BG.TCOShowHopeLootList)(bt)
         RaiseZhuangbeiListAboveHope()
+        if bt.SetFocus and bt:IsVisible() then
+            bt:SetFocus()
+        end
     end
 end
 
