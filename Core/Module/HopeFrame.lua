@@ -3,7 +3,7 @@ local _, ns = ...
 local L = ns.L
 local LibBG = ns.LibBG
 
-local HOPE_UI_VERSION = 14
+local HOPE_UI_VERSION = 15
 
 local function EnsureHopeSaved()
     local realmID = GetRealmID()
@@ -192,8 +192,12 @@ function BG.BGP_HopeDebug()
     end
     local FB = BG.FB1 or BiaoGe.FB or (BG.FBtable and BG.FBtable[1])
     print("|cff00BFFF[BGLite Plus 心愿调试]|r FB=", tostring(FB))
+    local function Vis(f)
+        if not f then return "无帧" end
+        return "Shown=" .. tostring(f:IsShown()) .. " Visible=" .. tostring(f:IsVisible())
+    end
     print("  HopeMainFrame=", BG.HopeMainFrame and "有" or "无",
-        "可见=", BG.HopeMainFrame and BG.HopeMainFrame:IsVisible() or "?",
+        Vis(BG.HopeMainFrame),
         "Level=", BG.HopeMainFrame and BG.HopeMainFrame:GetFrameLevel() or "?")
     print("  HopeMaxn=", FB and ns.HopeMaxn and ns.HopeMaxn[FB],
         "HopeMaxb=", FB and ns.HopeMaxb and ns.HopeMaxb[FB],
@@ -203,13 +207,15 @@ function BG.BGP_HopeDebug()
     if FB then
         local hf = BG["HopeFrame" .. FB]
         print("  HopeFrame=", hf and "有" or "无",
-            "可见=", hf and hf:IsVisible() or "?",
+            Vis(hf),
             "Level=", hf and hf:GetFrameLevel() or "?")
         local cell = BG.HopeFrame and BG.HopeFrame[FB]
             and BG.HopeFrame[FB]["nandu1"]
             and BG.HopeFrame[FB]["nandu1"]["boss1"]
             and BG.HopeFrame[FB]["nandu1"]["boss1"]["zhuangbei1"]
-        print("  首格=", cell and (cell:GetObjectType() .. " L" .. cell:GetFrameLevel()) or "无")
+        print("  首格=", cell and (cell:GetObjectType() .. " L" .. cell:GetFrameLevel()
+            .. " Shown=" .. tostring(cell:IsShown())
+            .. " Visible=" .. tostring(cell:IsVisible())) or "无")
     end
 end
 
@@ -309,11 +315,16 @@ local function EnsureHopeFrame(FB, parent)
         hf = CreateFrame("Frame", "BGP.HopeFrame." .. FB, parent)
         hf.isBGPHope = true
         hf.isTCOHope = true
-        hf:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
-        hf:SetFrameLevel(parent:GetFrameLevel() + 2)
         hf:Hide()
         BG["HopeFrame" .. FB] = hf
     end
+    -- 防止父帧脱钩导致 Show 了但看不见
+    if parent and hf:GetParent() ~= parent then
+        hf:SetParent(parent)
+    end
+    hf:ClearAllPoints()
+    hf:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+    hf:SetFrameLevel(parent:GetFrameLevel() + 2)
     return hf
 end
 

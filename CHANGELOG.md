@@ -13,6 +13,10 @@
 - 配置 CurseForge 项目（`X-Curse-Project-ID: 1672098`）
 - 首次通过 GitHub Actions + BigWigs packager 自动上传 CurseForge
 
+### 修复
+- 心愿页切换时 `UpdateBiaoGeAllIsHaved` 按 `Maxb` 越界访问导致报错（Plus 安全覆盖，不改 BGLite）
+- 心愿装备选择列表被格子挡住无法点击（弹出后提升到 TOOLTIP 层）
+
 ---
 
 ## [0.1.2] - 2026-08-28
