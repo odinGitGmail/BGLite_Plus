@@ -7,6 +7,22 @@
 
 ---
 
+## [0.1.8] - 2026-08-30
+
+### 新增
+- `OptionsBridge`：自建设置控件工厂，将页签可靠挂入 BGLite 设置
+- **角色总览** 设置补全（自 TitanCharOverview 迁入）：团本 / 任务 / 专业 CD / 声望 / 货币勾选，排序与布局，等级与装等过滤，备注 / 专精 / 阵营等
+
+### 修复
+- 心愿格子点击后装备列表不出现或一闪即关（失焦误关列表；抬层改为同 Strata 提高 FrameLevel）
+- BGLite 设置中缺少「角色总览 / 心愿清单」页签（原先依赖 BGLite 私有 `ns.O` 导致安装失败）
+
+### 变更
+- 角色总览 / 心愿相关设置统一在 **BGLite** 选项内；请禁用独立插件 TitanCharOverview，避免重复
+- 更新 README（中/英）说明设置入口、与 TCO 关系及常见问题
+
+---
+
 ## [0.1.7] - 2026-08-30
 
 ### 变更
@@ -47,7 +63,7 @@
 
 ### 修复
 - 心愿页切换时 `UpdateBiaoGeAllIsHaved` 按 `Maxb` 越界访问导致报错（Plus 安全覆盖，不改 BGLite）
-- 心愿装备选择列表被格子挡住无法点击（弹出后提升到 TOOLTIP 层）
+- 心愿装备选择列表被格子挡住无法点击（弹出后提升列表层级）
 
 ---
 
@@ -89,6 +105,7 @@
 
 ---
 
+[0.1.8]: https://github.com/odinGitGmail/BGLite_Plus/compare/v0.1.7...v0.1.8
 [0.1.7]: https://github.com/odinGitGmail/BGLite_Plus/compare/v0.1.6...v0.1.7
 [0.1.6]: https://github.com/odinGitGmail/BGLite_Plus/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/odinGitGmail/BGLite_Plus/compare/v0.1.4...v0.1.5
