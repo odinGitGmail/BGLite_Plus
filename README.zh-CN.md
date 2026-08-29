@@ -79,11 +79,14 @@
 ## 开发
 
 ```powershell
-# 发新版（改 toc 版本 → commit → 自动 push → CurseForge 发布）
-.\release.cmd 0.1.4
+# 发正式版（自动：toc 最小段 +1，如 0.1.3 → 0.1.4）
+.\release.cmd
+
+# 或指定版本
+.\release.cmd 0.2.0
 ```
 
-发布标志为 `BGLite_Plus.toc` 中的 `## Version`。
+必须推送干净的 `v{版本}` 标签才会上传为正式版；同一版本号不可重复使用。
 
 ---
 

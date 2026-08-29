@@ -1,19 +1,20 @@
 name: Release to CurseForge
 
-# 发布标志：BGLite_Plus.toc 的 ## Version
-# master push 且该版本相对上一提交变化时 → 打 tag v{版本} → BigWigsMods/packager 上传 CurseForge
+# 正式版：仅在推送 v* tag 时打包（当前提交落在 tag 上 → CurseForge Release）
+# 发版命令:
+#   .\release.cmd           # toc 最小段 +1
+#   .\release.cmd 0.1.4     # 指定版本
 
 on:
   push:
-    branches:
-      - master
+    tags:
+      - "v*"
   workflow_dispatch:
     inputs:
-      force:
-        description: 强制发布（忽略 toc 版本是否变化）
-        required: false
-        default: "false"
-        type: boolean
+      tag:
+        description: 要重新发布的已有 tag（如 v0.1.4）
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -26,68 +27,40 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
 
-      - name: Detect toc version change
-        id: version
-        shell: bash
-        env:
-          FORCE: ${{ github.event_name == 'workflow_dispatch' && inputs.force }}
-        run: |
-          set -euo pipefail
-          TOC="BGLite_Plus.toc"
-          current=$(grep -m1 '^## Version:' "$TOC" | sed 's/^## Version:[[:space:]]*//' | tr -d '\r')
-          if git rev-parse HEAD~1 >/dev/null 2>&1; then
-            previous=$(git show "HEAD~1:$TOC" 2>/dev/null | grep -m1 '^## Version:' | sed 's/^## Version:[[:space:]]*//' | tr -d '\r' || true)
-          else
-            previous=""
-          fi
-          echo "current=$current" >> "$GITHUB_OUTPUT"
-          echo "previous=$previous" >> "$GITHUB_OUTPUT"
-          if [ "$FORCE" = "true" ]; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "手动强制发布 toc 版本 ${current}"
-          elif [ -n "$previous" ] && [ "$current" = "$previous" ]; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "toc ## Version 未变化 (${current})，跳过发布。"
-          else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "toc ## Version: ${previous:-<none>} -> ${current}，开始发布。"
-          fi
-
-      - name: Check CurseForge secrets and toc project id
-        if: steps.version.outputs.changed == 'true'
-        env:
-          CF_API_KEY: ${{ secrets.CF_API_KEY }}
+      - name: Verify tagged commit (release, not alpha)
+        id: tag
         shell: bash
         run: |
           set -euo pipefail
-          if [ -z "${CF_API_KEY:-}" ]; then
-            echo "::error::缺少 GitHub Secret CF_API_KEY（与 TitanCharOverview 使用同一个即可）"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+          fi
+          if [[ "${TAG,,}" == *alpha* ]] || [[ "${TAG,,}" == *beta* ]]; then
+            echo "::error::tag ${TAG} 含 alpha/beta，不能作为正式版。请使用 v0.1.4 这类名字。"
+            exit 1
+          fi
+          POINTS=$(git tag --points-at HEAD || true)
+          if ! grep -qxF "$TAG" <<<"$POINTS"; then
+            echo "::error::HEAD 未指向 tag ${TAG}（points-at: ${POINTS:-无}）。拒绝上传以免变成 Alpha。"
+            exit 1
+          fi
+          if [ -z "${{ secrets.CF_API_KEY }}" ]; then
+            echo "::error::缺少 GitHub Secret CF_API_KEY"
             exit 1
           fi
           if ! grep -qE '^## X-Curse-Project-ID:[[:space:]]*[1-9][0-9]*' BGLite_Plus.toc; then
-            echo "::error::请在 BGLite_Plus.toc 增加一行: ## X-Curse-Project-ID: <CurseForge项目数字ID>"
+            echo "::error::请在 BGLite_Plus.toc 增加: ## X-Curse-Project-ID: <数字ID>"
             exit 1
           fi
-
-      - name: Create git tag from toc version
-        if: steps.version.outputs.changed == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          VERSION="${{ steps.version.outputs.current }}"
-          TAG="v${VERSION}"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git rev-parse "$TAG" >/dev/null 2>&1; then
-            echo "已存在 tag ${TAG}"
-          else
-            git tag -a "$TAG" -m "release: ${TAG} (toc ## Version)"
-          fi
-          git push origin "refs/tags/${TAG}" || true
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "正式版发布: ${TAG} @ $(git rev-parse --short HEAD)"
 
       - name: Package and publish to CurseForge
-        if: steps.version.outputs.changed == 'true'
         uses: BigWigsMods/packager@v2
         env:
           CF_API_KEY: ${{ secrets.CF_API_KEY }}
+          GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}

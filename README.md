@@ -79,11 +79,14 @@ No files in BGLite are modified; integration is runtime-only via `BG.*` hooks.
 ## Development
 
 ```powershell
-# Release (bumps toc version → commit → auto push → CurseForge)
-.\release.cmd 0.1.4
+# Release (auto: bump last toc version segment, e.g. 0.1.3 → 0.1.4)
+.\release.cmd
+
+# Or set an explicit version
+.\release.cmd 0.2.0
 ```
 
-Release is triggered when `## Version` in `BGLite_Plus.toc` changes.
+A clean `v{version}` tag push uploads as CurseForge Release (not Alpha). Do not reuse a version.
 
 ---
 

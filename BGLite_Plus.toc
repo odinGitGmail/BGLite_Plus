@@ -1,9 +1,9 @@
-## Interface: 38002
+﻿## Interface: 38002
 ## Title: BGLite Plus
 ## Title-zhCN: |cff00BFFFBGLite 增强|r
 ## Notes: 为 BGLite 增加心愿清单与角色总览。命令：/bgp /bgph
 ## Author: 丷杠上开花丷
-## Version: 0.1.3
+## Version: 0.1.4
 ## X-Curse-Project-ID: 1672098
 ## Dependencies: BGLite
 ## SavedVariables: BGLite_Plus
