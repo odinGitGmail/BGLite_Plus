@@ -3,7 +3,7 @@
 ## Title-zhCN: |cff00BFFFBGLite 增强|r
 ## Notes: 为 BGLite 增加心愿清单与角色总览。命令：/bgp /bgph
 ## Author: 丷杠上开花丷
-## Version: 0.1.7
+## Version: 0.1.8
 ## X-Curse-Project-ID: 1672098
 ## Dependencies: BGLite
 ## SavedVariables: BGLite_Plus
@@ -23,6 +23,7 @@ Core\Module\RoleOverview.lua
 Core\Module\RoleOverview_core.lua
 Core\Module\RoleOverviewSort.lua
 Core\Integrations\HopeTab.lua
+Core\Integrations\OptionsBridge.lua
 Core\Integrations\RoleOverviewOptions.lua
 Core\Integrations\MinimapHover.lua
 Core\Bootstrap.lua
